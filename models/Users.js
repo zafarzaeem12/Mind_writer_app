@@ -4,7 +4,7 @@ const UserSchema = new mongoose.Schema({
     name: {
         type: String,
     },
-    company_name: {
+    description: {
         type: String,
     },
     category:{

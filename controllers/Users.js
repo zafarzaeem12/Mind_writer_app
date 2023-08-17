@@ -68,49 +68,35 @@ const Register_New_User = async (req, res, next) => {
 const Complete_Profile = async (req, res, next) => {
   const email = req.query.email;
   try {
-    const find_email = await User.findOne({ email: email });
+    
     const userAvator = req?.file?.path?.replace(/\\/g, "/");
-    find_email.role === 'Client' ? 
-     (  complete_profile = await User.updateOne(
-      { email: find_email.email },
-      {
-        $set: {
-          user_image: userAvator,
-          name: req.body.name,
-          company_name: req.body.company_name,
-          business_phone_number: req.body.business_phone_number,
-          phone_number: req.body.phone_number,
-          state: req.body.state,
-          category: req.body.category,
-          user_is_profile_complete: true,
-          is_verified: true,
+    const find_email = await User.findOne({ email : email})
+    const complete_profile = await User.updateOne(
+        { email: find_email.email },
+        {
+          $set: {
+            user_image: userAvator,
+            name: req.body.name,
+            phone_number: req.body.phone_number,
+            email : find_email.email,
+            description: req.body.description,
+            user_is_profile_complete: true,
+            is_verified: true,
+          },
         },
-      },
-      { new: true }
-    ) ) : find_email.role === 'Freelancer' ? 
-   ( complete_profile = await User.updateOne(
-      { email: find_email.email },
-      {
-        $set: {
-          user_image: userAvator,
-          name: req.body.name,
-          phone_number: req.body.phone_number,
-          state: req.body.state,
-          category: req.body.category,
-          job_request : req.body.job_request,
-          user_is_profile_complete: true,
-          is_verified: true,
-        },
-      },
-      { new: true }
-    )) : null
+        { new: true }
+        )
 
 
-    res.status(200).send({
+    res
+    .status(200)
+    .send({
       message: "Profile Completed Successfully",
     });
   } catch (err) {
-    res.status(404).send({
+    res
+    .status(404)
+    .send({
       message: "Profile Not Completed",
     });
   }
