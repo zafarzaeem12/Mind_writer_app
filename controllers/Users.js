@@ -103,65 +103,74 @@ const Complete_Profile = async (req, res, next) => {
 };
 
 const LoginRegisteredUser = async (req, res, next) => {
-  try {
     const email = req.body.email;
     const password = req.body.password;
     const user_device_token = req.body.user_device_token || "asdfghjkl";
     const user_device_type = req.body.user_device_type || "android";
-
-    const LoginUser = await User.findOne({
-      email: email,
-      user_device_token: user_device_token,
-      user_device_type: user_device_type,
-    });
-    const gen_password = CryptoJS.AES.decrypt(
-      LoginUser?.password,
-      process.env.SECRET_KEY
-    );
-    const original_password = gen_password.toString(CryptoJS.enc.Utf8);
-
-    if (email !== LoginUser?.email) {
-      res.send({ message: "Email Not Matched" });
-    } else if (password !== original_password) {
-      res.send({ message: "Password Not Matched" });
-    } else {
-      if (LoginUser.role === "Client" || LoginUser.role === "Freelancer") {
-        const expiresIn = LoginUser.role === "Freelancer" ? "1h" : "23h";
-        const token = jwt.sign(
-          {
-            id: LoginUser._id,
-            role: LoginUser.role,
-          },
-          process.env.SECRET_KEY,
-          { expiresIn }
-        );
-
-        const save_token = await User.findByIdAndUpdate(
-          { _id: LoginUser?._id?.toString() },
-          { $set: { user_authentication: `${token}` } },
-          { new: true }
-        );
-        const { user_authentication } = save_token;
-
-        res.send({
-          message: "Login Successful",
-          status: 200,
-          data: { user_authentication },
-        });
-      } else {
-        res.send({
-          message: "Invalid role",
-          status: 403,
-        });
+  
+    try {
+      const LoginUser = await User.findOne({
+        email: email,
+        user_device_token: user_device_token,
+        user_device_type: user_device_type,
+      });
+  
+      if (!LoginUser) {
+        return res.status(404).send({ message: "Email not matched" });
       }
+  
+      if (!email) {
+        return res.status(400).send({ message: "Email field is empty" });
+      }
+  
+      if (!password) {
+        return res.status(400).send({ message: "Password field is empty" });
+      }
+  
+      if (email !== LoginUser.email) {
+        return res.status(404).send({ message: "Email not matched" });
+      }
+
+      if (password !== LoginUser.password) {
+        return res.status(404).send({ message: "password not matched" });
+      }
+  
+      const gen_password = CryptoJS.AES.decrypt(
+        LoginUser?.password,
+        process.env.SECRET_KEY
+      );
+      const original_password = gen_password.toString(CryptoJS.enc.Utf8);
+  
+      if (password !== original_password) {
+        return res.status(404).send({ message: "Password not matched" });
+      }
+  
+      const token = jwt.sign(
+        {
+          id: LoginUser._id,
+        },
+        process.env.SECRET_KEY,
+        { expiresIn: '1d' }
+      );
+      const save_token = await User.findByIdAndUpdate(
+        { _id: LoginUser?._id?.toString() },
+        { $set: { user_authentication: `${token}` } },
+        { new: true }
+      );
+      const { user_authentication } = save_token;
+      res.send({
+        message: "Login Successful",
+        status: 200,
+        data: { user_authentication },
+      });
+    } catch (err) {
+      res.send({
+        message: "Login Failed",
+        status: 404,
+      });
     }
-  } catch (err) {
-    res.send({
-      message: "Login Failed",
-      status: 404,
-    });
-  }
-};
+  };
+  
 
 const VerifyRegisteredUser = async (req, res) => {
   try {
